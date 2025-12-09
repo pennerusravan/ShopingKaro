@@ -12,10 +12,10 @@ resource "aws_lb" "alb" {
 }
 
 resource "aws_lb_target_group" "tg" {
-  name     = "${var.project_name}-tg"
-  port     = 3000
-  protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  name        = "${var.project_name}-tg"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
   target_type = "ip"
 
   health_check {
@@ -125,9 +125,11 @@ resource "aws_ecs_task_definition" "task" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
+          mode                  = "non-blocking"
           awslogs-group         = "/ecs/${var.project_name}"
           awslogs-region        = var.aws_region
           awslogs-stream-prefix = "ecs"
+          awslogs-create-group  = "true"
         }
       }
     }
