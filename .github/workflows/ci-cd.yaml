@@ -57,7 +57,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: production
     steps:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v2
