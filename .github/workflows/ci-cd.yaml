@@ -2,7 +2,7 @@ name: Build and deploy to ECS
 
 on:
     push:
-        branches: [master]
+        branches: [feat/devops]
     workflow_dispatch:
 
 permissions:
