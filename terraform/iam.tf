@@ -27,14 +27,14 @@ data "aws_iam_policy_document" "ecs_task_s3_access" {
 
   statement {
     effect    = "Allow"
-    actions   = ["s3:GetObject"]
+    actions   = ["s3:GetObject", "s3:GetObjectVersion"]
     resources = ["${aws_s3_object.env_file.arn}"]
   }
 }
 
 resource "aws_iam_role_policy" "ecs_task_s3_access" {
   name   = "${var.project_name}-ecs-task-s3-access"
-  role   = aws_iam_role.ecs_task_role.id
+  role   = aws_iam_role.ecs_execution_role.id
   policy = data.aws_iam_policy_document.ecs_task_s3_access.json
 }
 
