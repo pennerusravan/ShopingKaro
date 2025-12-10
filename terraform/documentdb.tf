@@ -1,13 +1,13 @@
 resource "aws_docdb_subnet_group" "docdb_sg" {
-  name       = "${var.project_name}-docdb-subnet-group"
+  name       = "${local.resource_prefix}-docdb-subnet-group"
   subnet_ids = var.private_subnet_ids
-  tags       = merge(local.common_tags, { Name = "${var.project_name}-docdb-subnet-group" })
+  tags       = merge(local.common_tags, { Name = "${local.resource_prefix}-docdb-subnet-group" })
 }
 
 resource "aws_security_group" "docdb_sg" {
-  name   = "${var.project_name}-docdb-sg"
+  name   = "${local.resource_prefix}-docdb-sg"
   vpc_id = var.vpc_id
-  tags   = merge(local.common_tags, { Name = "${var.project_name}-docdb-sg" })
+  tags   = merge(local.common_tags, { Name = "${local.resource_prefix}-docdb-sg" })
 
   ingress {
     from_port       = 27017
@@ -25,7 +25,7 @@ resource "aws_security_group" "docdb_sg" {
 }
 
 resource "aws_docdb_cluster" "cluster" {
-  cluster_identifier     = "${var.project_name}-docdb-cluster"
+  cluster_identifier     = "${local.resource_prefix}-docdb-cluster"
   master_username        = var.docdb_username
   master_password        = var.docdb_password
   skip_final_snapshot    = true
@@ -35,7 +35,7 @@ resource "aws_docdb_cluster" "cluster" {
 
 resource "aws_docdb_cluster_instance" "instance" {
   count              = 1
-  identifier         = "${var.project_name}-docdb-instance-${count.index}"
+  identifier         = "${local.resource_prefix}-docdb-instance-${count.index}"
   cluster_identifier = aws_docdb_cluster.cluster.id
   instance_class     = "db.t3.medium"
   engine             = "docdb"
