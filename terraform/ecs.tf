@@ -11,6 +11,18 @@ resource "aws_lb" "alb" {
   tags               = { Name = "${var.project_name}-alb" }
 }
 
+resource "aws_route53_record" "alb_record" {
+  zone_id = var.route53_hosted_zone_id
+  name    = var.route53_record_name
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.alb.dns_name
+    zone_id                = aws_lb.alb.zone_id
+    evaluate_target_health = true
+  }
+}
+
 resource "aws_lb_target_group" "tg" {
   name        = "${var.project_name}-tg"
   port        = 3000

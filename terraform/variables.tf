@@ -39,6 +39,16 @@ variable "acm_certificate_arn" {
   default     = ""
 }
 
+variable "route53_hosted_zone_id" {
+  description = "The Route53 Hosted Zone ID to create the ALB DNS record"
+  type        = string
+}
+
+variable "route53_record_name" {
+  description = "The DNS record name to create in Route53 for the ALB (e.g., app.example.com)"
+  type        = string
+}
+
 variable "docdb_username" {
   description = "Username for DocumentDB admin user"
   type        = string
