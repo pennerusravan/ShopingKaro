@@ -1,60 +1,103 @@
-# Terraform (ShopingKaro)
+# ShoppingKaro Infrastructure as Code (Terraform)
 
-This Terraform module provisions ECR, ECS (Fargate + ALB), CloudWatch Log Group, and Amazon DocumentDB using an existing VPC.
+This repository contains Terraform configurations for deploying the ShoppingKaro application infrastructure on AWS. The setup includes containerized ECS Fargate services, DocumentDB for data persistence, S3 for configuration storage, Application Load Balancer for traffic distribution, and comprehensive security hardening.
+
 ## Prerequisites
-- Terraform 1.0+
-- AWS account and credentials configured (environment variables, long-lived keys, or GitHub Actions OIDC)
-## Quick start
-1. cd terraform
-2. terraform init
-3. terraform plan \
-	-var 'aws_region=us-east-1' \
-	-var 'vpc_id=<vpc-id>' \
-4. terraform apply (use the same -var flags as plan)
-## Key variables and features
-- `vpc_id`, `public_subnet_ids`, `private_subnet_ids` — supply your existing VPC and subnet IDs.
-- `acm_certificate_arn` — ARN of an ACM certificate to enable HTTPS on the ALB.
-- `route53_hosted_zone_id` and `route53_record_name` — When supplied, Terraform will create an Alias A record pointing the ALB to the given Route53 hosted zone. Omit or leave empty to skip DNS creation.
-- `project_name` — prefix used for resource names and `Project` tag (default: `shopingkaro`).
-- `environment` — tag value used for the `Environment` tag (default: `dev`).
-- `log_retention_in_days` — retention for the CloudWatch Log Group created for ECS logs (default: 14).
 
-## Tagging
-- All supported resources created by this module include consistent tags via `local.common_tags`:
-	- `Project = var.project_name`
-	- `Environment = var.environment`
+- [Terraform](https://www.terraform.io/downloads) >= 1.0
+- AWS CLI configured with appropriate credentials
+- An existing VPC with public and private subnets
+- An ACM certificate ARN for HTTPS (ALB listener)
+- Route 53 hosted zone for DNS management
+- An Amazon ECR repository for container images
+- An S3 bucket for storing the environment file
 
-## CloudWatch Logs
-- A CloudWatch Log Group named `/ecs/${var.project_name}` is created and used by the ECS task `awslogs` driver. The task definition does not attempt to auto-create the group (the provider creates it), avoiding runtime permission races.
+## Variable Configuration
 
-## IAM
-- The ECS execution role (`${var.project_name}-ecs-exec-role`) is used for execution tasks and receives an inline policy granting access to the S3 `env_file` object and permissions required for log handling. The task role (`${var.project_name}-ecs-task-role`) is separate and intended for application-level permissions.
+Create a `terraform.tfvars` file in the root directory of this Terraform configuration and populate it with the following variables. Replace the placeholder values with your actual AWS resources and configuration:
 
-## Notes and usage examples
-- To create a DNS record for the ALB (example `app.example.com` in zone `Z123...`):
-
-```bash
-terraform plan \
-	-var 'route53_hosted_zone_id=Z1234567890' \
-	-var 'route53_record_name=app.example.com' \
-	-var 'vpc_id=<vpc-id>' \
-	-var 'public_subnet_ids=["subnet-aaa","subnet-bbb"]' \
-	-var 'private_subnet_ids=["subnet-ccc","subnet-ddd"]'
-terraform apply (with same vars)
+```hcl
+aws_region               = "eu-west-3"
+project_name             = "shopingkaro"
+environment              = "dev"  # or "prod"
+vpc_id                   = "vpc-xxxxxxxxx"
+public_subnet_ids        = ["subnet-xxxxx", "subnet-xxxxx"]
+private_subnet_ids       = ["subnet-xxxxx", "subnet-xxxxx"]
+acm_certificate_arn      = "arn:aws:acm:eu-west-3:xxxx:certificate/xxxxx"
+route53_hosted_zone_id   = "Z1234567890ABC"
+route53_record_name      = "app.example.com"
+docdb_username           = "admin"
+docdb_password           = "SecurePassword123!"
+container_image_uri      = "123456789012.dkr.ecr.eu-west-3.amazonaws.com/shopingkaro"
+s3_bucket_env_file_arn = "arn:aws:s3:::shopingkaro/nev_file.env"
 ```
 
-- To change tagging environment (production/staging):
+## Usage
+
+### 1. Initialize Terraform (with Remote Backend)
 
 ```bash
-terraform plan -var 'environment=prod' ...
-```
-
-## Validation and formatting
-- Run `terraform fmt` and `terraform validate` after editing variables or files:
-
-```bash
-cd terraform
-terraform fmt
+# For local state (development):
 terraform init
-terraform validate
+
+# For remote state (recommended for team/production):
+terraform init \
+  -backend-config="bucket=your-terraform-state-bucket" \
+  -backend-config="key=shopingkaro/terraform.tfstate" \
+  -backend-config="region=eu-west-3" \
 ```
+
+### 2. Validate Configuration
+
+```bash
+terraform validate
+terraform fmt -check .  # Check formatting
+```
+
+### 3. Plan Changes
+
+```bash
+terraform plan -out=tfplan
+```
+
+### 4. Apply Configuration
+
+```bash
+terraform apply tfplan
+```
+
+### 5. View Outputs
+
+```bash
+terraform output
+terraform output alb_dns
+terraform output docdb_endpoint
+```
+
+### 6. Destroy Infrastructure (Caution!)
+
+```bash
+terraform destroy
+```
+
+
+## S3 Environment Configuration
+### Prepare the Environment File
+
+Create an `.env` file locally with your DocumentDB connection string and other application configuration:
+
+```bash
+# .env file content
+MONGODB_URI="mongodb://<username>:<password>@<documentdb_endpoint>:27017/?tls=true&tlsCAFile=/app/global-bundle.pem&retryWrites=false"
+```
+
+> **⚠️ Important:** The certificate path `/app/global-bundle.pem` is the default location. If your Docker image stores the certificate at a different path, update the `tlsCAFile` parameter accordingly.
+
+### Upload to S3
+
+Upload the `.env` file to your S3 bucket:
+
+```bash
+aws s3 cp .env s3://shopingkaro/env_file.env
+```
+
