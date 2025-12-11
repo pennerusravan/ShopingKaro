@@ -67,3 +67,8 @@ variable "container_image_uri" {
   description = "URI of the container image to deploy in ECS (could be ECR or Docker Hub)"
   type        = string
 }
+
+variable "s3_bucket_env_file_arn" {
+  description = "ARN of the S3 bucket environment file"
+  type        = string
+}

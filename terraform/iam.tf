@@ -23,13 +23,10 @@ data "aws_iam_policy_document" "ecs_task_s3_access" {
   statement {
     effect = "Allow"
     actions = [
-      "s3:ListBucket",
       "s3:GetObject",
-      "s3:GetObjectVersion"
     ]
     resources = [
-      aws_s3_bucket.env_file.arn,
-      "${aws_s3_bucket.env_file.arn}/*"
+      var.s3_bucket_env_file_arn,
     ]
   }
 }

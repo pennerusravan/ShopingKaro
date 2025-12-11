@@ -59,7 +59,6 @@ resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.alb.arn
   port              = 443
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
   certificate_arn   = var.acm_certificate_arn
 
   default_action {
@@ -141,7 +140,7 @@ resource "aws_ecs_task_definition" "task" {
       portMappings = [{ containerPort = 3000, protocol = "tcp" }]
       environmentFiles = [
         {
-          value = aws_s3_object.env_file.arn
+          value = var.s3_bucket_env_file_arn
           type  = "s3"
         }
       ]
